@@ -1,0 +1,6 @@
+# 发布包（git archive）排除规则：开发文件不进插件安装包
+/.github export-ignore
+/scripts export-ignore
+/.gitattributes export-ignore
+/.gitignore export-ignore
+/dist export-ignore

@@ -2,6 +2,31 @@
 
 拦截文章内容、评论内容与评论者网址中的外链，点击后先经过中转页 `/go/{key}` 提醒，再按 **黑名单 > 白名单 > 普通** 的优先级决定跳转行为。
 
+## 安装
+
+1. 从 [Releases](https://github.com/binjoo/SafeGo/releases) 下载 `SafeGo.zip`，或到 [插件合集](https://github.com/binjoo/typecho-plugins) 一次性下载全部插件
+2. 解压得到 `SafeGo/` 目录，把**整个目录**上传到 Typecho 的 `/usr/plugins/` 下
+3. 在后台「控制台 → 插件」中启用
+
+> 请不要使用 GitHub 页面上的 "Source code" 压缩包：它的顶层目录带版本号（`SafeGo-1.0.0/`），而 Typecho 要求目录名与插件名一致，否则无法识别。
+>
+> 运行要求：Typecho 1.3+、PHP 8.0+（用到 `match` 与 `str_starts_with()`）。
+
+## 发布
+
+推送一个 `v*` 标签即自动发布（校验版本一致性 → 打包 → 创建 Release）：
+
+```bash
+git tag v1.0.1 && git push origin v1.0.1
+```
+
+本地也可以先跑一遍校验与打包，不推送任何东西：
+
+```bash
+bash scripts/release.sh check    # 版本、DocBlock、PHP 语法
+bash scripts/release.sh build    # 生成 dist/SafeGo.zip 并断言 zip 结构
+```
+
 ## 行为说明
 
 | 分类 | 中转页行为 |

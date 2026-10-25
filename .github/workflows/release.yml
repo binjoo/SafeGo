@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  # 推送 v* 标签即发布
+  push:
+    tags: ['v*']
+  # 手动触发：用于补发、重跑或只构建（把 publish 取消勾选）
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 创建或更新 Release（取消勾选则只校验与打包）
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出仓库（需要完整标签与历史）
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 准备 PHP（按插件声明的最低版本校验语法）
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
+          coverage: none
+
+      - name: 校验版本与语法
+        run: bash scripts/release.sh check
+
+      - name: 打包
+        run: bash scripts/release.sh build
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: SafeGo-zip
+          path: dist/SafeGo.zip
+          if-no-files-found: error
+
+      - name: 发布 Release
+        if: github.event_name != 'workflow_dispatch' || inputs.publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/release.sh publish
+
+      - name: 未发布时预览说明
+        if: github.event_name == 'workflow_dispatch' && !inputs.publish
+        run: |
+          echo "---- 未发布，以下是发布说明预览 ----"
+          bash scripts/release.sh notes
+
+      # 可选加速：发版后立刻通知 typecho-plugins 聚合更新，不必等定时任务
+      # 需要在仓库 Secrets 里配置 HUB_TOKEN（对 typecho-plugins 有 contents:write 的 PAT）
+      # - name: 通知合集仓库
+      #   env:
+      #     HUB_TOKEN: ${{ secrets.HUB_TOKEN }}
+      #   run: |
+      #     curl -sS -X POST \
+      #       -H "Authorization: Bearer $HUB_TOKEN" \
+      #       -H "Accept: application/vnd.github+json" \
+      #       https://api.github.com/repos/binjoo/typecho-plugins/dispatches \
+      #       -d '{"event_type":"plugin-released","client_payload":{"plugin":"SafeGo"}}'
